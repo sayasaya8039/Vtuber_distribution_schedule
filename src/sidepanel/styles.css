@@ -457,3 +457,71 @@ body {
   background: white;
   border-top: 2px solid #ffe4ec;
 }
+
+/* フィルターセクション */
+.filter-section {
+  margin-bottom: 16px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-select {
+  flex: 1;
+  padding: 10px 14px;
+  background: white;
+  border: 2px solid #ffe4ec;
+  border-radius: 10px;
+  color: #333;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff6ec7' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #ff6ec7;
+}
+
+/* ヘッダーアクション */
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.export-btn {
+  padding: 8px 12px;
+  background: #fff5f8;
+  border: 2px solid #ffe4ec;
+  border-radius: 8px;
+  color: #ff6ec7;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-btn:hover {
+  background: #ff6ec7;
+  color: white;
+  border-color: #ff6ec7;
+}
+
+/* 結果なし */
+.no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  background: white;
+  border-radius: 16px;
+}
+
+.no-results p {
+  font-size: 14px;
+}

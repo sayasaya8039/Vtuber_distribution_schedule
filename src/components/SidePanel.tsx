@@ -63,7 +63,7 @@ export function SidePanel() {
       </main>
 
       <footer className="footer">
-        <span>VTuber Schedule Calendar v1.0.0</span>
+        <span>VTuber Schedule Calendar v1.2.0</span>
       </footer>
     </div>
   );
