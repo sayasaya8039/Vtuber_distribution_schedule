@@ -9,11 +9,12 @@ interface AppState {
   schedules: HolodexLive[];
   holodexApiKey: string;
   settings: AppSettings;
-  
+
   // UI状態
   loading: boolean;
   error: string | null;
-  
+  selectedVTuberId: string | null; // 選択中のVTuber
+
   // アクション
   initialize: () => Promise<void>;
   addVTuber: (vtuber: VTuberChannel) => Promise<void>;
@@ -21,6 +22,7 @@ interface AppState {
   setApiKey: (key: string) => Promise<void>;
   updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
   refreshSchedules: () => Promise<void>;
+  selectVTuber: (channelId: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -36,6 +38,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   loading: false,
   error: null,
+  selectedVTuberId: null,
 
   initialize: async () => {
     set({ loading: true, error: null });
@@ -100,7 +103,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ schedules: [] });
       return;
     }
-    
+
     set({ loading: true, error: null });
     try {
       const schedules = await fetchSchedules(
@@ -113,5 +116,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  selectVTuber: (channelId) => {
+    set({ selectedVTuberId: channelId });
   },
 }));

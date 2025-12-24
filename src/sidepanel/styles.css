@@ -525,3 +525,38 @@ body {
 .no-results p {
   font-size: 14px;
 }
+
+/* 選択中VTuberバナー */
+.selected-vtuber-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #ff6ec7 0%, #ff9a9e 100%);
+  color: white;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clear-filter-btn {
+  background: rgba(255,255,255,0.3);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.clear-filter-btn:hover {
+  background: rgba(255,255,255,0.5);
+}
+
+/* VTuber選択状態 */
+.vtuber-item.selected {
+  background: linear-gradient(135deg, #fff5f8 0%, #ffe4ec 100%);
+  border: 2px solid #ff6ec7;
+  box-shadow: 0 4px 12px rgba(255,110,199,0.3);
+}

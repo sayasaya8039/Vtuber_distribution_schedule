@@ -40,12 +40,24 @@ function generateICS(schedules: HolodexLive[], vtubers: VTuberChannel[]): string
 }
 
 export function ScheduleList() {
-  const { schedules, vtubers, loading } = useAppStore();
+  const { schedules, vtubers, loading, selectedVTuberId, selectVTuber } = useAppStore();
   const [dateFilter, setDateFilter] = useState<FilterType>('all');
   const [orgFilter, setOrgFilter] = useState<OrgFilter>('all');
 
+  // 選択中のVTuber名を取得
+  const selectedVTuber = selectedVTuberId
+    ? vtubers.find(v => v.channelId === selectedVTuberId)
+    : null;
+
   // フィルター適用
   const filteredSchedules = schedules.filter(schedule => {
+    // VTuber個別フィルター（最優先）
+    if (selectedVTuberId) {
+      if (schedule.channel.id !== selectedVTuberId) {
+        return false;
+      }
+    }
+
     const startTime = getStartTime(schedule);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -63,9 +75,9 @@ export function ScheduleList() {
       passDate = startTime >= today && startTime < weekEnd;
     }
 
-    // 組織フィルター
+    // 組織フィルター（VTuber個別選択時は無視）
     let passOrg = true;
-    if (orgFilter !== 'all') {
+    if (!selectedVTuberId && orgFilter !== 'all') {
       const vtuber = vtubers.find(v => v.channelId === schedule.channel.id);
       passOrg = vtuber?.org === orgFilter;
     }
@@ -145,6 +157,16 @@ export function ScheduleList() {
           </select>
         </div>
       </div>
+
+      {/* 選択中VTuber表示 */}
+      {selectedVTuber && (
+        <div className="selected-vtuber-banner">
+          <span>🎯 {selectedVTuber.name} の配信</span>
+          <button onClick={() => selectVTuber(null)} className="clear-filter-btn">
+            ✕ 解除
+          </button>
+        </div>
+      )}
 
       {/* ヘッダー */}
       <div className="schedule-header">
