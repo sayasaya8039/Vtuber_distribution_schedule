@@ -1,31 +1,13 @@
 import { useState } from 'react';
 import { useAppStore } from '../lib/store';
-import { getAuthToken, revokeAuthToken } from '../lib/calendar';
 
 export function Settings() {
   const { holodexApiKey, settings, setApiKey, updateSettings } = useAppStore();
   const [apiKeyInput, setApiKeyInput] = useState(holodexApiKey);
-  const [googleConnected, setGoogleConnected] = useState(false);
 
   const handleSaveApiKey = async () => {
     await setApiKey(apiKeyInput);
     alert('APIキーを保存しました');
-  };
-
-  const handleConnectGoogle = async () => {
-    try {
-      await getAuthToken(true);
-      setGoogleConnected(true);
-      alert('Googleカレンダーに接続しました');
-    } catch (error) {
-      alert('接続に失敗しました: ' + (error as Error).message);
-    }
-  };
-
-  const handleDisconnectGoogle = async () => {
-    await revokeAuthToken();
-    setGoogleConnected(false);
-    alert('接続を解除しました');
   };
 
   return (
@@ -51,32 +33,17 @@ export function Settings() {
       </section>
 
       <section className="settings-section">
-        <h4>Google カレンダー</h4>
-        {googleConnected ? (
-          <div className="connected">
-            <span>✅ 接続済み</span>
-            <button onClick={handleDisconnectGoogle} className="disconnect-btn">
-              接続解除
-            </button>
-          </div>
-        ) : (
-          <button onClick={handleConnectGoogle} className="connect-btn">
-            🔗 Googleカレンダーに接続
-          </button>
-        )}
+        <h4>カレンダー連携</h4>
+        <p className="help-text">
+          .icsファイルをエクスポートして、Google Calendar / Outlook / Apple Calendarにインポートできます。
+        </p>
+        <p className="help-text" style={{ fontSize: '11px', color: '#999' }}>
+          ※ スケジュール画面の「.ics」ボタンからダウンロード
+        </p>
       </section>
 
       <section className="settings-section">
-        <h4>同期設定</h4>
-        
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={settings.autoSync}
-            onChange={(e) => updateSettings({ autoSync: e.target.checked })}
-          />
-          自動同期を有効にする
-        </label>
+        <h4>通知設定</h4>
 
         <label className="checkbox-label">
           <input
@@ -88,24 +55,13 @@ export function Settings() {
         </label>
 
         <div className="input-group">
-          <label>同期間隔（分）</label>
+          <label>更新間隔（分）</label>
           <input
             type="number"
             min="15"
             max="360"
             value={settings.syncIntervalMinutes}
             onChange={(e) => updateSettings({ syncIntervalMinutes: Number(e.target.value) })}
-          />
-        </div>
-
-        <div className="input-group">
-          <label>リマインダー（分前）</label>
-          <input
-            type="number"
-            min="5"
-            max="120"
-            value={settings.reminderMinutes}
-            onChange={(e) => updateSettings({ reminderMinutes: Number(e.target.value) })}
           />
         </div>
       </section>

@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '../lib/store';
 import { getStartTime } from '../lib/holodex';
-import { liveToCalendarEvent, createCalendarEvent, generateEventKey } from '../lib/calendar';
-import { addSyncedEventId, getStorageData } from '../lib/storage';
 import type { HolodexLive, VTuberChannel } from '../types';
 
 type FilterType = 'all' | 'today' | 'tomorrow' | 'week';
@@ -42,16 +40,9 @@ function generateICS(schedules: HolodexLive[], vtubers: VTuberChannel[]): string
 }
 
 export function ScheduleList() {
-  const { schedules, vtubers, loading, settings } = useAppStore();
-  const [syncing, setSyncing] = useState<string | null>(null);
-  const [syncingAll, setSyncingAll] = useState(false);
-  const [syncedIds, setSyncedIds] = useState<string[]>([]);
+  const { schedules, vtubers, loading } = useAppStore();
   const [dateFilter, setDateFilter] = useState<FilterType>('all');
   const [orgFilter, setOrgFilter] = useState<OrgFilter>('all');
-
-  useEffect(() => {
-    getStorageData().then(data => setSyncedIds(data.syncedEventIds));
-  }, []);
 
   // フィルター適用
   const filteredSchedules = schedules.filter(schedule => {
@@ -86,41 +77,6 @@ export function ScheduleList() {
     return getStartTime(a).getTime() - getStartTime(b).getTime();
   });
 
-  const handleAddToCalendar = async (live: HolodexLive) => {
-    const vtuber = vtubers.find(v => v.channelId === live.channel.id);
-    if (!vtuber) return;
-
-    setSyncing(live.id);
-    try {
-      const event = liveToCalendarEvent(live, vtuber, settings.reminderMinutes);
-      await createCalendarEvent(event, settings.calendarId);
-
-      const eventKey = generateEventKey(live);
-      await addSyncedEventId(eventKey);
-      setSyncedIds(prev => [...prev, eventKey]);
-    } catch (error) {
-      console.error('Failed to add to calendar:', error);
-      alert('カレンダーへの追加に失敗しました');
-    } finally {
-      setSyncing(null);
-    }
-  };
-
-  const handleAddAllToCalendar = async () => {
-    const unsynced = sortedSchedules.filter(s => !isSynced(s));
-    if (unsynced.length === 0) return;
-
-    setSyncingAll(true);
-    try {
-      for (const schedule of unsynced) {
-        await handleAddToCalendar(schedule);
-      }
-      alert(`${unsynced.length}件の配信をカレンダーに追加しました!`);
-    } finally {
-      setSyncingAll(false);
-    }
-  };
-
   const handleExportICS = () => {
     const icsContent = generateICS(sortedSchedules, vtubers);
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
@@ -132,9 +88,6 @@ export function ScheduleList() {
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  const isSynced = (live: HolodexLive) =>
-    syncedIds.includes(generateEventKey(live));
 
   const formatDateTime = (date: Date) => {
     return date.toLocaleString('ja-JP', {
@@ -163,8 +116,6 @@ export function ScheduleList() {
       </div>
     );
   }
-
-  const unsyncedCount = sortedSchedules.filter(s => !isSynced(s)).length;
 
   return (
     <div className="schedule-list">
@@ -202,19 +153,11 @@ export function ScheduleList() {
           <button
             className="export-btn"
             onClick={handleExportICS}
-            title="Outlook/Apple Calendar用"
+            title="カレンダーにインポート"
+            disabled={sortedSchedules.length === 0}
           >
-            .ics
+            📅 .ics
           </button>
-          {unsyncedCount > 0 && (
-            <button
-              className="sync-all-btn"
-              onClick={handleAddAllToCalendar}
-              disabled={syncingAll}
-            >
-              {syncingAll ? '追加中...' : `全て追加 (${unsyncedCount})`}
-            </button>
-          )}
         </div>
       </div>
 
@@ -252,13 +195,6 @@ export function ScheduleList() {
               >
                 ▶
               </a>
-              <button
-                onClick={() => handleAddToCalendar(schedule)}
-                disabled={syncing === schedule.id || isSynced(schedule)}
-                title={isSynced(schedule) ? '追加済み' : 'カレンダーに追加'}
-              >
-                {syncing === schedule.id ? '...' : isSynced(schedule) ? 'v' : '+'}
-              </button>
             </div>
           </div>
         ))
