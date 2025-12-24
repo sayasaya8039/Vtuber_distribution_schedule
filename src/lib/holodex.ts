@@ -10,28 +10,56 @@ export async function fetchSchedules(
   channelIds: string[]
 ): Promise<HolodexLive[]> {
   if (!apiKey || channelIds.length === 0) {
+    console.log('[Holodex] No API key or channels');
     return [];
   }
 
-  const params = new URLSearchParams({
-    channels: channelIds.join(','),
-    status: 'upcoming,live',
-    type: 'stream',
-    max_upcoming_hours: '168', // 1週間先まで
-    limit: '50',
-  });
+  console.log('[Holodex] Fetching schedules for channels:', channelIds);
 
-  const response = await fetch(`${HOLODEX_API_BASE}/live?${params}`, {
-    headers: {
-      'X-APIKEY': apiKey,
-    },
-  });
+  // 各チャンネルの配信を個別に取得（より確実）
+  const allSchedules: HolodexLive[] = [];
 
-  if (!response.ok) {
-    throw new Error(`Holodex API error: ${response.status}`);
+  for (const channelId of channelIds) {
+    try {
+      // チャンネルのライブ・予定配信を取得
+      const response = await fetch(
+        `${HOLODEX_API_BASE}/users/live?channels=${channelId}`,
+        {
+          headers: { 'X-APIKEY': apiKey },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`[Holodex] ${channelId}: ${data.length} live/upcoming`);
+        allSchedules.push(...data);
+      }
+
+      // 予定配信も取得（videos endpoint）
+      const videosRes = await fetch(
+        `${HOLODEX_API_BASE}/channels/${channelId}/videos?status=upcoming&type=stream&limit=10`,
+        {
+          headers: { 'X-APIKEY': apiKey },
+        }
+      );
+
+      if (videosRes.ok) {
+        const videos = await videosRes.json();
+        console.log(`[Holodex] ${channelId}: ${videos.length} scheduled videos`);
+        // 重複を避けて追加
+        for (const video of videos) {
+          if (!allSchedules.find(s => s.id === video.id)) {
+            allSchedules.push(video);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`[Holodex] Error fetching ${channelId}:`, error);
+    }
   }
 
-  return response.json();
+  console.log('[Holodex] Total schedules:', allSchedules.length);
+  return allSchedules;
 }
 
 /**
