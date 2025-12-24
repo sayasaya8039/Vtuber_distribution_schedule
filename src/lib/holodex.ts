@@ -35,44 +35,61 @@ export async function fetchSchedules(
 }
 
 /**
- * チャンネル情報を検索
+ * チャンネル情報を検索（autocompleteエンドポイント使用）
  */
 export async function searchChannels(
   apiKey: string,
   query: string
 ): Promise<VTuberChannel[]> {
-  const params = new URLSearchParams({
-    q: query,
-    type: 'vtuber',
-    limit: '20',
-  });
-
-  const response = await fetch(`${HOLODEX_API_BASE}/channels?${params}`, {
-    headers: {
-      'X-APIKEY': apiKey,
-    },
-  });
+  // autocompleteエンドポイントで検索
+  const response = await fetch(
+    `${HOLODEX_API_BASE}/search/autocomplete?q=${encodeURIComponent(query)}`,
+    {
+      headers: {
+        'X-APIKEY': apiKey,
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Holodex API error: ${response.status}`);
   }
 
-  const channels = await response.json();
-  
-  return channels.map((ch: {
-    id: string;
-    name: string;
-    english_name?: string;
-    org?: string;
-    photo?: string;
-  }) => ({
-    id: ch.id,
-    name: ch.english_name || ch.name,
-    channelId: ch.id,
-    org: mapOrg(ch.org),
-    color: getOrgColor(ch.org),
-    avatarUrl: ch.photo,
-  }));
+  const results = await response.json();
+
+  // チャンネル結果のみ抽出（typeが"channel"のもの）
+  const channels = results
+    .filter((r: { type: string }) => r.type === 'channel')
+    .slice(0, 10);
+
+  // 各チャンネルの詳細を取得
+  const channelDetails = await Promise.all(
+    channels.map(async (ch: { value: string; text: string }) => {
+      try {
+        const detailRes = await fetch(
+          `${HOLODEX_API_BASE}/channels/${ch.value}`,
+          { headers: { 'X-APIKEY': apiKey } }
+        );
+        if (detailRes.ok) {
+          return detailRes.json();
+        }
+      } catch {
+        // 詳細取得失敗時はスキップ
+      }
+      return null;
+    })
+  );
+
+  return channelDetails
+    .filter((ch): ch is NonNullable<typeof ch> => ch !== null)
+    .map((ch) => ({
+      id: ch.id,
+      name: ch.english_name || ch.name,
+      channelId: ch.id,
+      org: mapOrg(ch.org),
+      color: getOrgColor(ch.org),
+      avatarUrl: ch.photo,
+    }));
 }
 
 /**
