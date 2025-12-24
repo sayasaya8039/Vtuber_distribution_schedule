@@ -9,11 +9,18 @@ type Tab = 'schedule' | 'vtubers' | 'settings';
 
 export function SidePanel() {
   const [activeTab, setActiveTab] = useState<Tab>('schedule');
-  const { initialize, refreshSchedules, error } = useAppStore();
+  const { initialize, refreshSchedules, error, selectedVTuberId } = useAppStore();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // VTuber選択時に自動でスケジュールタブへ
+  useEffect(() => {
+    if (selectedVTuberId) {
+      setActiveTab('schedule');
+    }
+  }, [selectedVTuberId]);
 
   const handleRefresh = () => {
     refreshSchedules();
