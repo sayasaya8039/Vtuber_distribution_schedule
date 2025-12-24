@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+bun.lock
+
+# Build output (keep VtuberScheduleCalendar)
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
