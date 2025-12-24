@@ -128,9 +128,9 @@ async function handleMessage(message: { type: string; payload?: unknown }) {
   }
 }
 
-// Side Panel有効化
+// Side Panel有効化 - アイコンクリックでサイドパネルを開く
 chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: false })
+  .setPanelBehavior({ openPanelOnActionClick: true })
   .catch((error) => console.error(error));
 
 // 設定変更時にアラーム更新
