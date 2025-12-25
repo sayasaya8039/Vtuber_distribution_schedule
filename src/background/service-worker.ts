@@ -274,8 +274,8 @@ function notifyNewStreams(schedules: HolodexLive[], _vtubers: VTuberChannel[]) {
   if (upcoming.length === 0) return;
 
   const title = upcoming.length === 1
-    ? upcoming[0].channel.name + 'の配信予定'
-    : upcoming.length + '件の新しい配信予定';
+    ? chrome.i18n.getMessage('notificationTitleSingle', [upcoming[0].channel.name])
+    : chrome.i18n.getMessage('notificationTitleMultiple', [String(upcoming.length)]);
 
   const message = upcoming.map(s => s.channel.name + ': ' + s.title).join('\n');
 

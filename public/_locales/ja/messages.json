@@ -1,0 +1,58 @@
+{
+  "extName": {
+    "message": "VTuber Schedule Calendar",
+    "description": "拡張機能の名前"
+  },
+  "extDescription": {
+    "message": "複数VTuberの配信スケジュールをGoogle Calendarに自動統合",
+    "description": "拡張機能の説明"
+  },
+  "notificationTitleSingle": {
+    "message": "$VTUBER_NAME$の配信予定",
+    "description": "単一の配信通知タイトル",
+    "placeholders": {
+      "vtuber_name": {
+        "content": "$1",
+        "example": "星街すいせい"
+      }
+    }
+  },
+  "notificationTitleMultiple": {
+    "message": "$COUNT$件の新しい配信予定",
+    "description": "複数の配信通知タイトル",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "streamLabel": {
+    "message": "の配信",
+    "description": "配信ラベル"
+  },
+  "calendarEventTitle": {
+    "message": "$VTUBER_NAME$ 配信: $TITLE$",
+    "description": "カレンダーイベントタイトル",
+    "placeholders": {
+      "vtuber_name": {
+        "content": "$1",
+        "example": "星街すいせい"
+      },
+      "title": {
+        "content": "$2",
+        "example": "歌枠"
+      }
+    }
+  },
+  "streamUrl": {
+    "message": "配信URL: $URL$",
+    "description": "配信URLの説明",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "https://www.youtube.com/watch?v=xxx"
+      }
+    }
+  }
+}
