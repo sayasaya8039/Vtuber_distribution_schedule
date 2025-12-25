@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VTuber Schedule Calendar",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "複数VTuberの配信スケジュールをGoogle Calendarに自動統合🎭",
   "icons": {
     "16": "icons/icon16.png",
@@ -13,11 +13,21 @@
     "alarms",
     "storage",
     "notifications",
-    "sidePanel"
+    "sidePanel",
+    "identity"
   ],
   "host_permissions": [
-    "https://holodex.net/*"
+    "https://holodex.net/*",
+    "https://schedule.hololive.tv/*",
+    "https://www.nijisanji.jp/*",
+    "https://www.googleapis.com/*"
   ],
+  "oauth2": {
+    "client_id": "915221280614-inq0k7n21urmbpc661nh00svlthi638i.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.events"
+    ]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "VTuber Schedule Calendar",

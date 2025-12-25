@@ -6,6 +6,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   reminderMinutes: 30,
   notifyOnNewStream: true,
   calendarId: 'primary',
+  useHololiveScraper: true,
+  showAllHololive: false,
+  useNijisanjiScraper: true,
+  showAllNijisanji: false,
+  autoAddToCalendar: false,
 };
 
 /**

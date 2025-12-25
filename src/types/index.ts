@@ -68,6 +68,11 @@ export interface AppSettings {
   reminderMinutes: number;
   notifyOnNewStream: boolean;
   calendarId: string;
+  useHololiveScraper: boolean; // ホロジュールからスクレイピング
+  showAllHololive: boolean; // 全ホロライブ配信を表示（登録関係なく）
+  useNijisanjiScraper: boolean; // にじさんじ公式からスクレイピング
+  showAllNijisanji: boolean; // 全にじさんじ配信を表示（登録関係なく）
+  autoAddToCalendar: boolean; // 新しい配信を自動でカレンダーに追加
 }
 
 // メッセージング

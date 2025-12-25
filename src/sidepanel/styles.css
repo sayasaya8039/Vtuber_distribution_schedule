@@ -226,6 +226,18 @@ body {
   color: white;
 }
 
+.org-hololive {
+  background: linear-gradient(135deg, #33d6ff 0%, #00bfff 100%);
+}
+
+.org-nijisanji {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+}
+
+.org-other {
+  background: #888;
+}
+
 .remove-btn {
   background: #ff6b6b;
   border: none;
@@ -299,10 +311,66 @@ body {
   margin-bottom: 10px;
 }
 
+.channel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .channel-name {
   font-size: 12px;
   color: #ff6ec7;
   font-weight: 600;
+}
+
+.registered-badge {
+  font-size: 10px;
+  color: #4ecdc4;
+  font-weight: 700;
+}
+
+.register-btn {
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #4ecdc4 0%, #44b6a6 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.register-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(78,205,196,0.4);
+}
+
+.calendar-btn {
+  padding: 6px 10px;
+  background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calendar-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(66,133,244,0.4);
+}
+
+.calendar-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.calendar-btn.synced {
+  background: #e8f5e9;
+  color: #4caf50;
 }
 
 .title {

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { getStartTime } from '../lib/holodex';
+import { createCalendarEvent, liveToCalendarEvent, getAuthToken } from '../lib/calendar';
 import type { HolodexLive, VTuberChannel } from '../types';
 
 type FilterType = 'all' | 'today' | 'tomorrow' | 'week';
@@ -39,10 +40,86 @@ function generateICS(schedules: HolodexLive[], vtubers: VTuberChannel[]): string
   return lines.join('\r\n');
 }
 
+// 組織名を取得
+function getOrgLabel(org?: string): { label: string; className: string } | null {
+  if (!org) return null;
+  const orgLower = org.toLowerCase();
+  if (orgLower.includes('hololive')) {
+    return { label: 'ホロライブ', className: 'org-hololive' };
+  }
+  if (orgLower.includes('nijisanji')) {
+    return { label: 'にじさんじ', className: 'org-nijisanji' };
+  }
+  return { label: org, className: 'org-other' };
+}
+
 export function ScheduleList() {
-  const { schedules, vtubers, loading, selectedVTuberId, selectVTuber } = useAppStore();
+  const { schedules, vtubers, loading, selectedVTuberId, selectVTuber, addVTuber, settings } = useAppStore();
   const [dateFilter, setDateFilter] = useState<FilterType>('all');
   const [orgFilter, setOrgFilter] = useState<OrgFilter>('all');
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [syncedEventIds, setSyncedEventIds] = useState<Set<string>>(new Set());
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  // Google接続状態をチェック
+  useEffect(() => {
+    checkGoogleConnection();
+    loadSyncedEvents();
+  }, []);
+
+  const checkGoogleConnection = async () => {
+    try {
+      await getAuthToken(false);
+      setIsGoogleConnected(true);
+    } catch {
+      setIsGoogleConnected(false);
+    }
+  };
+
+  const loadSyncedEvents = async () => {
+    const result = await chrome.storage.sync.get(['syncedEventIds']);
+    setSyncedEventIds(new Set(result.syncedEventIds || []));
+  };
+
+  const handleAddToCalendar = async (schedule: HolodexLive) => {
+    if (syncedEventIds.has(schedule.id)) return;
+
+    setSyncingId(schedule.id);
+    try {
+      // VTuber情報を取得（登録済みか、スケジュールから作成）
+      let vtuber = vtubers.find(v => v.channelId === schedule.channel.id);
+      if (!vtuber) {
+        // 未登録の場合は仮のVTuber情報を作成
+        const orgLower = (schedule.channel.org || '').toLowerCase();
+        let org: 'hololive' | 'nijisanji' | 'indie' | 'other' = 'other';
+        if (orgLower.includes('hololive')) org = 'hololive';
+        else if (orgLower.includes('nijisanji')) org = 'nijisanji';
+
+        vtuber = {
+          id: schedule.channel.id,
+          name: schedule.channel.name,
+          channelId: schedule.channel.id,
+          org,
+          color: '#888',
+        };
+      }
+
+      const event = liveToCalendarEvent(schedule, vtuber, settings.reminderMinutes);
+      await createCalendarEvent(event);
+
+      // 同期済みIDを保存
+      const newSyncedIds = new Set(syncedEventIds);
+      newSyncedIds.add(schedule.id);
+      setSyncedEventIds(newSyncedIds);
+      await chrome.storage.sync.set({ syncedEventIds: Array.from(newSyncedIds) });
+
+      alert('カレンダーに追加しました！');
+    } catch (error) {
+      alert('追加に失敗しました: ' + (error as Error).message);
+    } finally {
+      setSyncingId(null);
+    }
+  };
 
   // 選択中のVTuber名を取得
   const selectedVTuber = selectedVTuberId
@@ -78,8 +155,23 @@ export function ScheduleList() {
     // 組織フィルター（VTuber個別選択時は無視）
     let passOrg = true;
     if (!selectedVTuberId && orgFilter !== 'all') {
+      // 登録済みVTuberのorgをチェック
       const vtuber = vtubers.find(v => v.channelId === schedule.channel.id);
-      passOrg = vtuber?.org === orgFilter;
+      if (vtuber?.org === orgFilter) {
+        passOrg = true;
+      } else {
+        // スクレイプデータのchannel.orgを直接チェック（大文字小文字無視）
+        const scheduleOrg = (schedule.channel.org || '').toLowerCase();
+        if (orgFilter === 'hololive' && scheduleOrg.includes('hololive')) {
+          passOrg = true;
+        } else if (orgFilter === 'nijisanji' && scheduleOrg.includes('nijisanji')) {
+          passOrg = true;
+        } else if (orgFilter === 'indie' && !scheduleOrg.includes('hololive') && !scheduleOrg.includes('nijisanji') && scheduleOrg !== '') {
+          passOrg = true;
+        } else {
+          passOrg = false;
+        }
+      }
     }
 
     return passDate && passOrg;
@@ -114,6 +206,34 @@ export function ScheduleList() {
   const getVTuberColor = (channelId: string) => {
     const vtuber = vtubers.find(v => v.channelId === channelId);
     return vtuber?.color || '#666';
+  };
+
+  // VTuberが登録済みかチェック
+  const isVTuberRegistered = (channelId: string) => {
+    return vtubers.some(v => v.channelId === channelId);
+  };
+
+  // スケジュールからVTuberを登録
+  const handleRegisterVTuber = async (schedule: HolodexLive) => {
+    const orgLower = (schedule.channel.org || '').toLowerCase();
+    let org: 'hololive' | 'nijisanji' | 'indie' | 'other' = 'other';
+    if (orgLower.includes('hololive')) org = 'hololive';
+    else if (orgLower.includes('nijisanji')) org = 'nijisanji';
+
+    // ランダムカラー生成
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#a29bfe', '#fd79a8'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    const vtuber: VTuberChannel = {
+      id: schedule.channel.id,
+      name: schedule.channel.name,
+      channelId: schedule.channel.id,
+      org,
+      color,
+      avatarUrl: schedule.channel.photo,
+    };
+
+    await addVTuber(vtuber);
   };
 
   if (loading) {
@@ -188,38 +308,72 @@ export function ScheduleList() {
           <p>該当する配信がありません</p>
         </div>
       ) : (
-        sortedSchedules.map((schedule) => (
-          <div
-            key={schedule.id}
-            className="schedule-item"
-            style={{ borderLeftColor: getVTuberColor(schedule.channel.id) }}
-          >
-            <div className="schedule-time">
-              {schedule.status === 'live' ? (
-                <span className="live-badge">LIVE</span>
-              ) : (
-                formatDateTime(getStartTime(schedule))
-              )}
-            </div>
+        sortedSchedules.map((schedule) => {
+          const orgInfo = getOrgLabel(schedule.channel.org);
+          const isRegistered = isVTuberRegistered(schedule.channel.id);
 
-            <div className="schedule-info">
-              <span className="channel-name">{schedule.channel.name}</span>
-              <span className="title">{schedule.title}</span>
-            </div>
+          return (
+            <div
+              key={schedule.id}
+              className="schedule-item"
+              style={{ borderLeftColor: getVTuberColor(schedule.channel.id) }}
+            >
+              <div className="schedule-time">
+                {schedule.status === 'live' ? (
+                  <span className="live-badge">LIVE</span>
+                ) : (
+                  formatDateTime(getStartTime(schedule))
+                )}
+              </div>
 
-            <div className="schedule-actions">
-              <a
-                href={`https://www.youtube.com/watch?v=${schedule.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="youtube-link"
-                title="YouTubeで開く"
-              >
-                ▶
-              </a>
+              <div className="schedule-info">
+                <div className="channel-row">
+                  <span className="channel-name">{schedule.channel.name}</span>
+                  {orgInfo && (
+                    <span className={`org-badge ${orgInfo.className}`}>
+                      {orgInfo.label}
+                    </span>
+                  )}
+                  {isRegistered && (
+                    <span className="registered-badge" title="登録済み">✓</span>
+                  )}
+                </div>
+                <span className="title">{schedule.title}</span>
+              </div>
+
+              <div className="schedule-actions">
+                {!isRegistered && (
+                  <button
+                    className="register-btn"
+                    onClick={() => handleRegisterVTuber(schedule)}
+                    title="このVTuberを登録"
+                  >
+                    +
+                  </button>
+                )}
+                {isGoogleConnected && (
+                  <button
+                    className={`calendar-btn ${syncedEventIds.has(schedule.id) ? 'synced' : ''}`}
+                    onClick={() => handleAddToCalendar(schedule)}
+                    disabled={syncingId === schedule.id || syncedEventIds.has(schedule.id)}
+                    title={syncedEventIds.has(schedule.id) ? 'カレンダー追加済み' : 'カレンダーに追加'}
+                  >
+                    {syncingId === schedule.id ? '...' : syncedEventIds.has(schedule.id) ? '📅✓' : '📅'}
+                  </button>
+                )}
+                <a
+                  href={`https://www.youtube.com/watch?v=${schedule.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="youtube-link"
+                  title="YouTubeで開く"
+                >
+                  ▶
+                </a>
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
